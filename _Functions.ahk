@@ -10,7 +10,6 @@ setkeydelay -1
 global lastX:=0
 global lastY:=0
 global lastWindowId:=0
-global copiedList := []
 
 equal( c1, c2 ) { ; function by [VxE], return value range = [0, 441.67295593006372]
 	; that just means that any two colors will have a distance less than 442
@@ -48,21 +47,18 @@ loadLastCursor(){
 }
 ;Click with mouse
 click(cx, cy){
-	CoordMode, Mouse, Screen
-	CoordMode, Tooltip, Screen
-	CoordMode, Pixel, Screen
-	SetCapsLockState, AlwaysOff
-	setmousedelay -1
-	setkeydelay -1
-
 	;untapMouse()
 	saveLastCursor()
 	saveLastWindow()
-	;MouseMove %cx%, %cy%
+	move(cx, cy)
 	Click %cx%, %cy%
 	;tooltip(cx . ", " . cy)
+	setmousedelay -1
 	focusLastWindow()
 	loadLastCursor()
+}
+clickView(view){
+	click(view[1], view[2])
 }
 move(x, y){
 	;saveLastCursor()
@@ -111,6 +107,9 @@ isColor(px, py, pcolor) {
 }
 c(px, py, pcolor){
 	return isColor(px, py, pcolor)
+}
+cv(view){
+	return isColor(view[1], view[2], view[3])
 }
 isColorS(px, py, pcolor, sensitivity) {
 	PixelGetColor, color, %px%, %py%, RGB
@@ -198,6 +197,9 @@ untapMouse(){
 pixelWait(x, y, color){
 	pixelWaitTime(x, y, color, 1000)
 }
+waitView(view, time:=1000){
+	pixelWaitTime(view[1], view[2], view[3], time)
+}
 pixelWaitTime(x, y, color, wait){
 	pixelWait:=0
 	wait:=wait/30
@@ -233,10 +235,19 @@ clickWait(x, y, color){
 	click(x, y)
 	pixelWait(x, y, color)
 }
+log(message){
+	tooltip(message)
+}
+msg(message){
+	MsgBox % message
+}
 tooltip(message, ms=1000){
 	ToolTip %message%
 	hideMs := ms * -1
 	settimer, clearTooltip, %hideMs%
+}
+startsWith(text, prefix){
+	return SubStr(text, 1, StrLen(prefix)) == prefix
 }
 clearTooltip:
 	Tooltip
@@ -320,8 +331,10 @@ copyCoordinate(){
 }
 
 copyText(){
+	untapButtons()
+	Clipboard := ""
 	send ^c
-	ClipWait, 10
+	ClipWait 1, 10
 }
 blackGrayWhite(red, green, blue){
 	totalColor := red + green + blue
@@ -346,17 +359,21 @@ splitRgbColor(RGBColor, ByRef Red, ByRef Green, ByRef Blue){
 pasteText(Byref board, text){
 	tempClip := Clipboard
 	Clipboard := text
-	ClipWait, 10
+	ClipWait 2, 10
 	Send ^v
 	pasteWait()
-	;SendInput % Clipboard
-	Clipboard := tempClip
-	ClipWait, 10
+	ClipWait 2, 10
+	;Clipboard := tempClip
+	;ClipWait 2, 10
 }
 pasteWait(){
-	; https://www.autohotkey.com/boards/viewtopic.php?f=5&t=37209&p=171360#p271287
-	while DllCall("user32\GetOpenClipboardWindow", "Ptr")
+	Loop{
+		if DllCall("user32\OpenClipboard", "Ptr",0){
+			DllCall("user32\CloseClipboard")
+			break
+		}
 		Sleep, 50
+	}
 }
 
 openWeb(url, newTab:=false){
@@ -367,11 +384,13 @@ openWeb(url, newTab:=false){
 }
 pasteFile(path){
 	tempClip := Clipboard
-	FileRead, Clipboard, %path%
-	ClipWait, 10
-	Send, ^v
-	Clipboard:=tempClip
-	ClipWait, 10
+	fullPath := A_ScriptDir . "\" . path
+	FileRead, Clipboard, %fullPath%
+	ClipWait 1, 10
+	Send ^v
+	pasteWait()
+	;Clipboard:=tempClip
+	;ClipWait 10, 10
 }
 ;Reset array
 resetArray(){
@@ -380,20 +399,64 @@ resetArray(){
 }
 ;Copy array
 copyArray(){
+	global copiedList
 	untapButtons()
 	copyText()
+	Sleep 100
 	copiedList.Push(Clipboard)
-	tooltip("Clipboards[" . copiedList.Length() . "]")
+	;tooltip("Clipboards[" . copiedList.Length() . "] " . copiedList[copiedList.Length()])
 	untapButtons()
 }
 ;Paste array
 pasteArray(){
-	Clipboard := % copiedList[1]
-	ClipWait, 10
-	;tooltip(copiedList[1])
-	Send ^v
-	ClipWait, 10
 	untapButtons()
+	global copiedList
+	Clipboard := % copiedList[1]
+	ClipWait 10, 10
+	SendInput ^v
+	pasteWait()
+	ClipWait 10, 10
+	;tooltip("Clipboards[" . (copiedList.Length()-1) . "] " . copiedList[1])
 	copiedList.RemoveAt(1)
-	tooltip("Clipboards[" . copiedList.Length() . "]")
+	untapButtons()
+}
+indexOfTextFromArray(text, array){
+	for index, value in array {
+		if (value == text){
+			return index
+			break
+		}
+	}
+	return 0
+}
+hasTextFromArray(text, array){
+	return indexOfTextFromArray(text, array) > 0
+}
+length(text){
+	StringLen, Length, % text
+	return Length
+}
+getValuesWithRegex(text, regex, separator:=","){
+	Matchposition := 0
+	Loop {    
+		Matchposition := RegExMatch(text, regex, CurrentMatch, Matchposition+1) ; Use last match position + 1 as starting position and put the next match in "CurrentMatch"
+		If !Matchposition ; if no more matches are found, exit the loop
+			Break
+		StringLen, Length, % CurrentMatch
+		Matchposition := Matchposition + Length
+		AllMatches .= separator . CurrentMatch ; concatenate matches (same as AllMatches := AllMatches . CurrentMatch)
+	}
+	StringLen, Length, % AllMatches
+	if(Length>0)
+		StringTrimLeft, AllMatches, AllMatches, 1
+	return AllMatches
+}
+getAllMatches(haystack,needle) {
+	matches := []
+	while n := RegExMatch(haystack,needle,match,n?n+1:1) { ;loop through all matches
+		index := matches.length()+1
+		loop % match.count() ;check how many subpatterns were found, add them to the array
+		matches.push(match.value(a_index))
+	}
+	return matches
 }

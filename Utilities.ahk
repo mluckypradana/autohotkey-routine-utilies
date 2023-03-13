@@ -121,7 +121,7 @@ viewUserByCorpId(corpId){
 	revealUserInfo()
 }
 getCopiedListOrClipboard(){
-	global copiedList
+	global copiedList 
 	text := Clipboard
 	if(copiedList.Length() > 0){
 		text := copiedList[1]
@@ -137,10 +137,26 @@ getCopiedListOrClipboard(){
 	pasteText(Clipboard, cleanClipboard(getCopiedListOrClipboard()))
 Return
 +^c::
-	copyText()
-	copyArray()
+	;copyText()
+	;untapButtons()
+	Clipboard:=""
+	send ^c
+	ClipWait 10, 10
+	;copyArray()
+	copiedList.Push(Clipboard)
+	tooltip("Clipboards[" . copiedList.Length() . "] " . copiedList[copiedList.Length()])
 Return
-+^v::pasteArray()
++^v::
+	;pasteArray()
+	;untapButtons()
+	Clipboard := % copiedList[1]
+	ClipWait 10, 10
+	SendInput ^v
+	pasteWait()
+	ClipWait 10, 10
+	tooltip("Clipboards[" . (copiedList.Length()-1) . "] " . copiedList[1])
+	copiedList.RemoveAt(1)
+Return
 
 ;Paste array without extra chars
 +^x::
@@ -150,8 +166,10 @@ Return
 Return
 
 ;Reset array
-+^r::resetArray()
-
++^r::
+	copiedList:=[]
+	tooltip("Clipboards[" . copiedList.Length() . "]")
+Return
 ;Open whatsapp based on phone number
 ^+w::openTab(urlWhatsappWithPhone . Clipboard)
 
