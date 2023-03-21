@@ -383,10 +383,11 @@ openWeb(url, newTab:=false){
 	Run, msedge.exe %url% %option%
 }
 pasteFile(path){
+	msgbox % path
 	tempClip := Clipboard
 	fullPath := A_ScriptDir . "\" . path
 	FileRead, Clipboard, %fullPath%
-	ClipWait 1, 10
+	ClipWait 10, 10
 	Send ^v
 	pasteWait()
 	;Clipboard:=tempClip
