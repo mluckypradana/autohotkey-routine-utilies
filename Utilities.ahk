@@ -1,4 +1,5 @@
 #InstallKeybdHook
+#InstallMouseHook
 SendMode Input
 SetCapsLockState, Off
 global incrementList := 84
@@ -371,5 +372,8 @@ Return
 		Sleep 50
 	}
 	untapButtons()
+Return
+!^+h::
+	KeyHistory
 Return
 #Include _Functions.ahk
