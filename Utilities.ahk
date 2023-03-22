@@ -9,7 +9,7 @@ SetMouseDelay -1
 
 untapButtons()
 
-#Include _Credentials.ahk
+#Include %A_ScriptDir%\_Credentials.ahk
 
 !+^Esc::ExitApp
 !Esc::
@@ -376,4 +376,4 @@ Return
 !^+h::
 	KeyHistory
 Return
-#Include _Functions.ahk
+#Include  %A_ScriptDir%\_Functions.ahk
