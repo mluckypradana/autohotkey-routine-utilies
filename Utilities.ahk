@@ -4,6 +4,7 @@ SendMode Input
 SetCapsLockState, Off
 global incrementList := 84
 global copiedList := []
+global charLength := 5
 SetKeyDelay -1
 SetMouseDelay -1
 
@@ -376,4 +377,46 @@ Return
 !^+h::
 	KeyHistory
 Return
+
+#Persistent
+
+SetKeyDelay, 0
+
+
+:*?:[p::
+    RandomizeWord(charLength)
+return
+
+RandomizeWord(length) {
+    word := ""
+    Random, startWithVowel, 0, 1
+
+    if (startWithVowel)
+        word := RandomVowel()
+    else
+        word := RandomConsonant()
+	loopTotal:=length-1
+	Loop, %loopTotal%
+	{
+        if (Mod(A_Index,2) == startWithVowel)
+            word .= RandomConsonant()
+        else
+            word .= RandomVowel()
+    }
+    Send, %word%
+}
+
+RandomConsonant() {
+    consonants := "bcdfghjklmnpqrstvwxyz"
+	Random, charIndex , 1, StrLen(consonants)
+    return SubStr(consonants,charIndex, 1)
+}
+
+RandomVowel() {
+    vowels := "aeiou"
+	Random, charIndex , 1, StrLen(vowels)
+    return SubStr(vowels, charIndex, 1)
+}
+
+
 #Include  %A_ScriptDir%\_Functions.ahk
