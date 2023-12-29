@@ -161,22 +161,22 @@ drag(sx, sy, dx, dy, delay:=24){
 	loadLastCursor()
 }
 untapButtons(){
-	if GetKeyState("Alt"){
+	if GetKeyState("Alt") || GetKeyState("LAlt") || GetKeyState("RAlt"){
 		Send {Alt up}
 		Send {LAlt up}
 		Send {RAlt up}
 	}
-	if GetKeyState("Win"){
+	if GetKeyState("Win") || GetKeyState("LWin") || GetKeyState("RWin"){
 		Send {Win up}
 		Send {LWin up}
 		Send {RWin up}
 	}
-	if GetKeyState("Ctrl"){
-		Send {Ctrl up}
+	if GetKeyState("Ctrl")|| GetKeyState("LCtrl") || GetKeyState("RCtrl"){
+	Send {Ctrl up}
 		Send {LCtrl up}
 		Send {RCtrl up}
 	}
-	if GetKeyState("Shift"){
+	if GetKeyState("Shift") ||GetKeyState("LShift") || GetKeyState("RShift") {
 		Send {Shift up}
 		Send {LShift up}
 		Send {RShift up}
